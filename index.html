@@ -1,0 +1,906 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+<meta charset="UTF-8"/>
+<meta name="viewport" content="width=device-width,initial-scale=1"/>
+<title>Météo agricole locale · Choisissez votre commune | AgroMétéo</title>
+<meta name="description" content="Météo agricole en temps réel pour toutes les communes de France. Stress hydrique, risque gel, ET0 et conseils IA pour maïs, tournesol, blé et toutes les cultures."/>
+<link rel="preconnect" href="https://fonts.googleapis.com"/>
+<link href="https://fonts.googleapis.com/css2?family=Lora:wght@400;600;700&family=Source+Sans+3:wght@300;400;600;700&display=swap" rel="stylesheet"/>
+<style>
+:root{
+  --vert:#2d6a2d;--vert-clair:#4a9a3a;--vert-pale:#e8f3e8;
+  --gris:#666;--gris-pale:#f5f5f0;--bord:#ddd;--texte:#1a1a1a;
+  --or:#e8a020;--ciel:#2a6496;--ciel-pale:#e8f0f8;--blanc:#fff;
+}
+*{box-sizing:border-box;margin:0;padding:0;}
+body{font-family:'Source Sans 3',sans-serif;font-size:16px;color:var(--texte);background:#fff;line-height:1.6;}
+
+/* ── TOPBAR ── */
+.topbar{background:var(--vert);color:#fff;font-size:12px;padding:5px 20px;display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:6px;}
+.topbar a{color:#b8d8b8;text-decoration:none;margin:0 7px;}
+.topbar a:hover{color:#fff;}
+
+/* ── HEADER ── */
+header{background:#fff;border-bottom:3px solid var(--vert);padding:14px 20px;display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:12px;}
+.logo{display:flex;align-items:center;gap:10px;text-decoration:none;}
+.logo-icon{width:46px;height:46px;background:var(--vert);border-radius:7px;display:flex;align-items:center;justify-content:center;font-size:24px;}
+.logo strong{font-family:'Lora',serif;font-size:21px;color:var(--vert);display:block;}
+.logo span{font-size:11px;color:var(--gris);letter-spacing:1px;text-transform:uppercase;}
+.pro-btn{background:var(--or);color:#fff;border:none;border-radius:4px;padding:8px 16px;font-weight:700;font-size:13px;cursor:pointer;font-family:inherit;}
+
+/* ── NAV ── */
+nav{background:var(--gris-pale);border-bottom:1px solid var(--bord);overflow-x:auto;}
+.nav-inner{max-width:1100px;margin:0 auto;padding:0 20px;display:flex;}
+.nav-inner a{display:block;padding:10px 15px;font-size:13px;font-weight:600;color:var(--texte);text-decoration:none;white-space:nowrap;border-bottom:3px solid transparent;transition:.15s;}
+.nav-inner a:hover,.nav-inner a.active{color:var(--vert);border-bottom-color:var(--vert);}
+
+/* ── HERO RECHERCHE ── */
+.hero{background:linear-gradient(135deg,#1a3d1a 0%,#2d6a2d 45%,#1a4a6a 100%);padding:40px 20px 48px;}
+.hero-inner{max-width:680px;margin:0 auto;text-align:center;}
+.hero h1{font-family:'Lora',serif;font-size:clamp(22px,4vw,34px);color:#fff;margin-bottom:10px;line-height:1.2;}
+.hero p{color:rgba(255,255,255,.8);font-size:15px;margin-bottom:28px;}
+
+/* ── SEARCH BOX PRINCIPAL ── */
+.search-box{background:#fff;border-radius:10px;padding:20px;box-shadow:0 8px 40px rgba(0,0,0,.25);position:relative;}
+.search-row{display:flex;gap:10px;flex-wrap:wrap;}
+.search-commune-wrap{flex:1;min-width:200px;position:relative;}
+.search-commune-wrap input{width:100%;padding:13px 16px 13px 42px;border:2px solid var(--bord);border-radius:6px;font-size:15px;font-family:inherit;outline:none;transition:.2s;}
+.search-commune-wrap input:focus{border-color:var(--vert);}
+.search-commune-wrap .pin{position:absolute;left:14px;top:50%;transform:translateY(-50%);font-size:18px;pointer-events:none;}
+.search-culture{padding:13px 12px;border:2px solid var(--bord);border-radius:6px;font-size:14px;font-family:inherit;outline:none;background:#fff;cursor:pointer;min-width:150px;}
+.search-culture:focus{border-color:var(--vert);}
+.search-btn{padding:13px 24px;background:var(--vert);color:#fff;border:none;border-radius:6px;font-size:15px;font-weight:700;cursor:pointer;font-family:inherit;white-space:nowrap;transition:.15s;}
+.search-btn:hover{background:var(--vert-clair);}
+.search-btn:disabled{opacity:.6;cursor:not-allowed;}
+
+/* ── AUTOCOMPLETE DROPDOWN ── */
+.autocomplete-list{position:absolute;top:calc(100% + 4px);left:0;right:0;background:#fff;border:2px solid var(--vert);border-radius:6px;box-shadow:0 8px 24px rgba(0,0,0,.15);z-index:1000;max-height:280px;overflow-y:auto;display:none;}
+.autocomplete-list.open{display:block;}
+.ac-item{padding:10px 14px;cursor:pointer;display:flex;align-items:center;gap:10px;border-bottom:1px solid var(--gris-pale);transition:.1s;}
+.ac-item:last-child{border:none;}
+.ac-item:hover,.ac-item.selected{background:var(--vert-pale);}
+.ac-item-icon{font-size:18px;flex-shrink:0;}
+.ac-item-name{font-weight:700;font-size:14px;color:var(--texte);}
+.ac-item-dept{font-size:12px;color:var(--gris);}
+.ac-loading{padding:14px;text-align:center;color:var(--gris);font-size:13px;}
+.ac-empty{padding:14px;text-align:center;color:var(--gris);font-size:13px;}
+
+/* ── COMMUNES POPULAIRES ── */
+.popular-communes{margin-top:14px;text-align:left;}
+.popular-communes p{font-size:12px;color:var(--gris);margin-bottom:8px;}
+.popular-tags{display:flex;flex-wrap:wrap;gap:6px;}
+.pop-tag{background:var(--gris-pale);border:1px solid var(--bord);border-radius:20px;padding:4px 12px;font-size:12px;cursor:pointer;color:var(--texte);transition:.15s;}
+.pop-tag:hover{background:var(--vert-pale);border-color:var(--vert);color:var(--vert);}
+
+/* ── BREADCRUMB ── */
+.breadcrumb{max-width:1100px;margin:12px auto;padding:0 20px;font-size:12px;color:var(--gris);}
+.breadcrumb a{color:var(--vert);text-decoration:none;}
+.breadcrumb span{color:var(--texte);font-weight:600;}
+
+/* ── MAIN LAYOUT ── */
+.wrap{max-width:1100px;margin:0 auto;padding:20px;display:grid;grid-template-columns:1fr 290px;gap:28px;}
+@media(max-width:780px){.wrap{grid-template-columns:1fr;}}
+
+/* ── ÉTAT INITIAL (avant recherche) ── */
+.welcome-state{text-align:center;padding:48px 20px;border:2px dashed var(--bord);border-radius:8px;margin-bottom:20px;}
+.welcome-state .ws-icon{font-size:56px;margin-bottom:14px;}
+.welcome-state h2{font-family:'Lora',serif;font-size:20px;color:var(--texte);margin-bottom:8px;}
+.welcome-state p{color:var(--gris);font-size:14px;max-width:420px;margin:0 auto;}
+.welcome-communes{display:grid;grid-template-columns:repeat(3,1fr);gap:10px;margin-top:20px;}
+@media(max-width:500px){.welcome-communes{grid-template-columns:repeat(2,1fr);}}
+.wc-btn{background:var(--gris-pale);border:1px solid var(--bord);border-radius:6px;padding:12px 8px;cursor:pointer;font-family:inherit;font-size:13px;transition:.15s;text-align:center;}
+.wc-btn:hover{background:var(--vert-pale);border-color:var(--vert);}
+.wc-btn .wc-icon{font-size:22px;display:block;margin-bottom:4px;}
+.wc-btn .wc-name{font-weight:700;color:var(--vert);}
+.wc-btn .wc-dept{font-size:11px;color:var(--gris);}
+
+/* ── RÉSULTATS MÉTÉO ── */
+.results{display:none;}
+.results.visible{display:block;}
+.meteo-header{background:var(--vert-pale);border:1px solid #b8d8b8;border-radius:8px;padding:20px;margin-bottom:16px;}
+.mh-top{display:flex;align-items:center;justify-content:space-between;margin-bottom:14px;flex-wrap:wrap;gap:8px;}
+.mh-title{font-family:'Lora',serif;font-size:19px;color:var(--vert);}
+.mh-badge{background:var(--vert);color:#fff;padding:4px 12px;border-radius:20px;font-size:12px;font-weight:700;}
+.meteo-now{display:flex;align-items:center;gap:18px;flex-wrap:wrap;}
+.mn-icon{font-size:60px;line-height:1;}
+.mn-temp{font-family:'Lora',serif;font-size:50px;font-weight:700;color:var(--vert);line-height:1;}
+.mn-desc{font-size:13px;color:var(--gris);margin-top:4px;}
+.mn-grid{display:grid;grid-template-columns:repeat(2,1fr);gap:8px 22px;margin-left:auto;}
+.mn-item label{font-size:11px;color:var(--gris);text-transform:uppercase;letter-spacing:.5px;display:block;}
+.mn-item strong{font-size:17px;font-weight:700;}
+.prev7{display:grid;grid-template-columns:repeat(7,1fr);gap:6px;margin-top:14px;}
+@media(max-width:500px){.prev7{grid-template-columns:repeat(4,1fr);} .prev7 .pd:nth-child(n+5){display:none;}}
+.pd{background:#fff;border:1px solid var(--bord);border-radius:5px;padding:9px 3px;text-align:center;}
+.pd .pj{font-size:10px;color:var(--gris);font-weight:700;text-transform:uppercase;}
+.pd .pi{font-size:22px;margin:3px 0;}
+.pd .pt{font-size:13px;font-weight:700;color:var(--vert);}
+.pd .pm{font-size:10px;color:var(--gris);}
+.pd .pp{font-size:10px;color:var(--ciel);margin-top:2px;}
+.source-note{font-size:11px;color:var(--gris);text-align:right;margin-top:8px;}
+
+/* ── STRESS ── */
+.stress-bloc{background:#fff;border:1px solid var(--bord);border-radius:7px;padding:18px;margin-bottom:16px;}
+.section-title{font-family:'Lora',serif;font-size:17px;color:var(--texte);margin-bottom:14px;padding-bottom:7px;border-bottom:2px solid var(--vert);}
+.sb-row{margin-bottom:10px;}
+.sb-row label{display:flex;justify-content:space-between;font-size:13px;margin-bottom:4px;}
+.sb-track{height:7px;background:#e8e8e8;border-radius:4px;overflow:hidden;}
+.sb-fill{height:100%;border-radius:4px;transition:width 1.3s ease;}
+.et0-line{background:var(--ciel-pale);border-radius:4px;padding:9px 13px;font-size:13px;color:var(--ciel);margin-top:10px;}
+.stress-summary{margin-top:8px;padding:9px 13px;border-radius:4px;font-size:13px;}
+.ok-bg{background:var(--vert-pale);color:var(--vert);}
+.warn-bg{background:#fef8e7;color:var(--or);}
+.danger-bg{background:#fef0ef;color:#c0392b;}
+
+/* ── CULTURES ── */
+.cultures-grid{display:grid;grid-template-columns:repeat(2,1fr);gap:12px;margin-bottom:20px;}
+@media(max-width:500px){.cultures-grid{grid-template-columns:1fr;}}
+.cc{background:#fff;border:1px solid var(--bord);border-radius:6px;padding:14px;display:flex;align-items:flex-start;gap:12px;}
+.cc-icon{font-size:30px;flex-shrink:0;}
+.cc h3{font-family:'Lora',serif;font-size:14px;margin-bottom:3px;color:var(--vert);}
+.cc p{font-size:12px;color:var(--gris);line-height:1.4;}
+.cc-badge{display:inline-block;margin-top:5px;font-size:10px;padding:2px 7px;border-radius:3px;font-weight:700;}
+.badge-ok{background:var(--vert-pale);color:var(--vert);}
+.badge-warn{background:#fef8e7;color:var(--or);}
+.badge-danger{background:#fef0ef;color:#c0392b;}
+
+/* ── SIDEBAR ── */
+.sidebar-block{background:#fff;border:1px solid var(--bord);border-radius:6px;padding:16px;margin-bottom:16px;}
+.sidebar-block h3{font-family:'Lora',serif;font-size:15px;margin-bottom:12px;}
+.sb-list{list-style:none;}
+.sb-list li{padding:5px 0;border-bottom:1px solid var(--gris-pale);font-size:13px;}
+.sb-list li:last-child{border:none;}
+.sb-list a{text-decoration:none;color:var(--texte);}
+.sb-list a:hover{color:var(--vert);}
+.btn{display:block;padding:10px 16px;border-radius:4px;font-weight:700;font-size:13px;cursor:pointer;border:none;font-family:inherit;text-align:center;text-decoration:none;transition:.15s;}
+.btn-vert{background:var(--vert);color:#fff;}
+.btn-vert:hover{background:var(--vert-clair);}
+.btn-or{background:var(--or);color:#fff;}
+.alerte-dot{display:inline-block;width:8px;height:8px;border-radius:50%;margin-right:6px;}
+.dot-green{background:#27ae60;}
+.dot-orange{background:#e67e22;}
+.dot-red{background:#c0392b;}
+
+/* ── LOADER ── */
+.loader-wrap{text-align:center;padding:32px;color:var(--gris);}
+.loader{display:inline-flex;gap:5px;align-items:center;}
+.loader span{width:8px;height:8px;border-radius:50%;background:var(--vert);animation:bounce .9s infinite;}
+.loader span:nth-child(2){animation-delay:.15s;}
+.loader span:nth-child(3){animation-delay:.3s;}
+@keyframes bounce{0%,100%{transform:translateY(0)}50%{transform:translateY(-7px)}}
+
+/* ── NEWSLETTER ── */
+.newsletter{background:var(--vert);color:#fff;padding:24px 20px;margin:16px 0;}
+.nl-inner{max-width:1100px;margin:0 auto;display:flex;align-items:center;gap:20px;flex-wrap:wrap;}
+.nl-inner h3{font-family:'Lora',serif;font-size:18px;flex:1;min-width:180px;}
+.nl-form{display:flex;gap:8px;flex:2;min-width:260px;}
+.nl-form input{flex:1;padding:9px 13px;border:none;border-radius:4px;font-size:13px;font-family:inherit;outline:none;}
+.nl-form button{padding:9px 18px;background:var(--or);color:#fff;border:none;border-radius:4px;font-weight:700;cursor:pointer;font-family:inherit;}
+
+/* ── FOOTER ── */
+footer{background:#1a1a1a;color:#aaa;padding:24px 20px 14px;}
+.footer-inner{max-width:1100px;margin:0 auto;}
+.footer-grid{display:grid;grid-template-columns:repeat(4,1fr);gap:20px;margin-bottom:16px;}
+@media(max-width:600px){.footer-grid{grid-template-columns:1fr 1fr;}}
+.footer-col h4{font-family:'Lora',serif;color:#fff;font-size:13px;margin-bottom:8px;}
+.footer-col a{display:block;color:#777;text-decoration:none;font-size:12px;padding:2px 0;}
+.footer-col a:hover{color:#fff;}
+.footer-bottom{border-top:1px solid #333;padding-top:12px;font-size:11px;color:#555;display:flex;justify-content:space-between;flex-wrap:wrap;gap:6px;}
+
+/* ── INDICE DE CONFIANCE ── */
+.confiance-bloc{background:#fff;border:1px solid var(--bord);border-radius:7px;padding:18px;margin-bottom:16px;}
+.confiance-score{display:flex;align-items:center;gap:14px;margin-bottom:14px;}
+.score-ring{width:66px;height:66px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-family:'Lora',serif;font-size:20px;font-weight:700;flex-shrink:0;border:4px solid;}
+.score-high{border-color:#27ae60;color:#27ae60;background:#e8f5e9;}
+.score-med{border-color:#e67e22;color:#e67e22;background:#fef3e0;}
+.score-low{border-color:#c0392b;color:#c0392b;background:#fef0ef;}
+.score-label strong{display:block;font-size:15px;color:var(--texte);}
+.score-label{font-size:13px;color:var(--gris);line-height:1.5;}
+.models-compare{display:grid;grid-template-columns:repeat(2,1fr);gap:10px;margin-top:4px;}
+.model-card{background:var(--gris-pale);border:1px solid var(--bord);border-radius:6px;padding:12px;}
+.mc-name{font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:.5px;color:var(--gris);margin-bottom:6px;}
+.mc-temp{font-family:'Lora',serif;font-size:22px;font-weight:700;color:var(--vert);}
+.mc-detail{font-size:12px;color:var(--gris);margin-top:3px;}
+.accord-badge{display:inline-block;padding:3px 10px;border-radius:20px;font-size:11px;font-weight:700;margin-top:12px;}
+.accord-ok{background:#e8f5e9;color:#27ae60;}
+.accord-warn{background:#fef3e0;color:#e67e22;}
+.accord-bad{background:#fef0ef;color:#c0392b;}
+.diff-table{width:100%;margin-top:12px;border-collapse:collapse;}
+.diff-table td{padding:5px 8px;font-size:12px;border-bottom:1px solid var(--gris-pale);}
+.diff-table td:first-child{color:var(--gris);}
+.diff-table td:last-child{font-weight:700;text-align:right;}
+.diff-ok{color:#27ae60;} .diff-warn{color:#e67e22;} .diff-bad{color:#c0392b;}
+/* ── WINDY MAP ── */
+.windy-bloc{background:#fff;border:1px solid var(--bord);border-radius:7px;overflow:hidden;margin-bottom:16px;}
+.windy-head{padding:14px 16px;display:flex;align-items:center;justify-content:space-between;border-bottom:1px solid var(--bord);flex-wrap:wrap;gap:8px;}
+.windy-head h2{font-family:'Lora',serif;font-size:17px;color:var(--texte);}
+.windy-tabs{display:flex;gap:4px;flex-wrap:wrap;}
+.wtab{padding:5px 11px;border:1px solid var(--bord);border-radius:4px;font-size:12px;font-weight:600;cursor:pointer;background:#fff;font-family:inherit;transition:.15s;}
+.wtab.active,.wtab:hover{background:var(--vert);color:#fff;border-color:var(--vert);}
+.windy-frame{width:100%;height:380px;border:none;display:block;}
+.windy-legend{padding:8px 14px;background:var(--gris-pale);font-size:11px;color:var(--gris);}
+
+</style>
+</head>
+<body>
+
+<!-- TOPBAR -->
+<div class="topbar">
+  <div><a href="/">Accueil</a><a href="/meteo-agricole">Météo locale</a><a href="/ndvi">NDVI Drone</a><a href="/guides">Guides cultures</a><a href="/alertes">Alertes</a></div>
+  <div><a href="/connexion">Connexion</a> · <a href="/pro" style="color:#ffe080;font-weight:700;">Pro 29€/mois</a></div>
+</div>
+
+<!-- HEADER -->
+<header>
+  <a href="/" class="logo">
+    <div class="logo-icon">🌾</div>
+    <div><strong>AgroMétéo</strong><span>MÉTÉO AGRICOLE · NDVI · IA</span></div>
+  </a>
+  <button class="pro-btn" onclick="document.getElementById('paywall').classList.add('open')">⭐ Passer Pro — 29€/mois</button>
+</header>
+
+<!-- NAV -->
+<nav><div class="nav-inner">
+  <a href="/" class="active">🌤 Météo locale</a>
+  <a href="/stress">📊 Stress hydrique</a>
+  <a href="/ndvi">🛸 NDVI Drone</a>
+  <a href="/conseil">🤖 Conseil IA</a>
+  <a href="/alertes">🔔 Alertes</a>
+  <a href="/guides">📚 Guides</a>
+</div></nav>
+
+<!-- HERO AVEC RECHERCHE -->
+<div class="hero">
+  <div class="hero-inner">
+    <h1>Météo agricole pour votre commune</h1>
+    <p>Données Open-Meteo en temps réel · ECMWF + Météo-France · Résolution 1km · Toute la France</p>
+
+    <div class="search-box">
+      <div class="search-row">
+        <div class="search-commune-wrap">
+          <span class="pin">📍</span>
+          <input type="text" id="communeInput"
+            placeholder="Commune ou code postal (ex: 31000, Auch...)"
+            autocomplete="off"
+            onInput="onCommuneInput(this.value)"
+            onKeyDown="onCommuneKey(event)"/>
+          <div class="autocomplete-list" id="acList"></div>
+        </div>
+        <select class="search-culture" id="cultureSelect">
+          <option value="Maïs">🌽 Maïs</option>
+          <option value="Tournesol">🌻 Tournesol</option>
+          <option value="Blé">🌾 Blé</option>
+          <option value="Colza">🟡 Colza</option>
+          <option value="Orge">🌾 Orge</option>
+          <option value="Vigne">🍇 Vigne</option>
+          <option value="Pomme de terre">🥔 Pomme de terre</option>
+          <option value="Soja">🫘 Soja</option>
+        </select>
+        <button class="search-btn" id="searchBtn" onclick="lancerRecherche()">Voir la météo →</button>
+      </div>
+
+      <div class="popular-communes">
+        <p>Communes populaires :</p>
+        <div class="popular-tags" id="popularTags">
+          <span class="pop-tag" onclick="selectPopular('Toulouse',43.6047,1.4442,'31')">📍 Toulouse</span>
+          <span class="pop-tag" onclick="selectPopular('Auch',43.6465,0.5857,'32')">📍 Auch</span>
+          <span class="pop-tag" onclick="selectPopular('Agen',44.2,0.6167,'47')">📍 Agen</span>
+          <span class="pop-tag" onclick="selectPopular('Montauban',44.0179,1.3528,'82')">📍 Montauban</span>
+          <span class="pop-tag" onclick="selectPopular('Tarbes',43.2328,0.0781,'65')">📍 Tarbes</span>
+          <span class="pop-tag" onclick="selectPopular('Mont-de-Marsan',43.8908,-0.5,'40')">📍 Mont-de-Marsan</span>
+          <span class="pop-tag" onclick="selectPopular('Chartres',48.4469,1.4897,'28')">📍 Chartres</span>
+          <span class="pop-tag" onclick="selectPopular('Dijon',47.322,5.0415,'21')">📍 Dijon</span>
+          <span class="pop-tag" onclick="selectPopular('Bordeaux',44.8378,-0.5792,'33')">📍 Bordeaux</span>
+          <span class="pop-tag" onclick="selectPopular('Rennes',48.1173,-1.6778,'35')">📍 Rennes</span>
+          <span class="pop-tag" onclick="useMyLocation()">📡 Ma position GPS</span>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- BREADCRUMB -->
+<div class="breadcrumb" id="breadcrumb" style="display:none;">
+  <a href="/">Accueil</a> › <a href="/meteo-agricole">Météo agricole</a> › <span id="breadText">—</span>
+</div>
+
+<!-- CONTENU PRINCIPAL -->
+<div class="wrap">
+<main>
+
+  <!-- ÉTAT INITIAL -->
+  <div class="welcome-state" id="welcomeState">
+    <div class="ws-icon">🗺️</div>
+    <h2>Choisissez votre commune</h2>
+    <p>Tapez le nom de votre commune dans la barre de recherche ci-dessus pour obtenir la météo agricole en temps réel.</p>
+    <div class="welcome-communes">
+      <button class="wc-btn" onclick="selectPopular('Toulouse',43.6047,1.4442,'31')"><span class="wc-icon">🌽</span><span class="wc-name">Toulouse</span><span class="wc-dept">Haute-Garonne (31)</span></button>
+      <button class="wc-btn" onclick="selectPopular('Auch',43.6465,0.5857,'32')"><span class="wc-icon">🌻</span><span class="wc-name">Auch</span><span class="wc-dept">Gers (32)</span></button>
+      <button class="wc-btn" onclick="selectPopular('Agen',44.2,0.6167,'47')"><span class="wc-icon">🍎</span><span class="wc-name">Agen</span><span class="wc-dept">Lot-et-Garonne (47)</span></button>
+      <button class="wc-btn" onclick="selectPopular('Montauban',44.0179,1.3528,'82')"><span class="wc-icon">🌾</span><span class="wc-name">Montauban</span><span class="wc-dept">Tarn-et-Garonne (82)</span></button>
+      <button class="wc-btn" onclick="selectPopular('Tarbes',43.2328,0.0781,'65')"><span class="wc-icon">🏔️</span><span class="wc-name">Tarbes</span><span class="wc-dept">Hautes-Pyrénées (65)</span></button>
+      <button class="wc-btn" onclick="useMyLocation()"><span class="wc-icon">📡</span><span class="wc-name">Ma position</span><span class="wc-dept">GPS automatique</span></button>
+    </div>
+  </div>
+
+  <!-- RÉSULTATS -->
+  <div class="results" id="results">
+
+    <!-- MÉTÉO ACTUELLE -->
+    <div class="meteo-header" id="meteoHeader">
+      <div class="mh-top">
+        <div class="mh-title" id="meteoTitle">—</div>
+        <span class="mh-badge" id="mh-badge">—</span>
+      </div>
+      <div id="meteoNow"><div class="loader-wrap"><div class="loader"><span></span><span></span><span></span></div><p style="margin-top:8px;">Chargement météo...</p></div></div>
+      <div class="source-note">📡 Open-Meteo · ECMWF + Météo-France · Résolution 1km · Mise à jour horaire</div>
+    </div>
+
+    <!-- STRESS AGRICOLE -->
+    <div class="stress-bloc" id="stressBloc" style="display:none;">
+      <h2 class="section-title">📊 Indicateurs de stress agricole</h2>
+      <div class="sb-row">
+        <label><span>💧 Stress hydrique</span><span id="vDrought" style="color:#e67e22;font-weight:700;"></span></label>
+        <div class="sb-track"><div class="sb-fill" id="bDrought" style="width:0%;background:#e67e22;"></div></div>
+      </div>
+      <div class="sb-row">
+        <label><span>❄️ Risque gel</span><span id="vFrost" style="color:#2980b9;font-weight:700;"></span></label>
+        <div class="sb-track"><div class="sb-fill" id="bFrost" style="width:0%;background:#2980b9;"></div></div>
+      </div>
+      <div class="sb-row">
+        <label><span>🌡️ Stress chaleur</span><span id="vHeat" style="color:#c0392b;font-weight:700;"></span></label>
+        <div class="sb-track"><div class="sb-fill" id="bHeat" style="width:0%;background:#c0392b;"></div></div>
+      </div>
+      <div class="et0-line" id="et0line" style="display:none;">
+        💧 Évapotranspiration ET0 : <strong id="et0val"></strong> mm/jour
+      </div>
+      <div class="stress-summary" id="stressSummary"></div>
+    </div>
+
+    <!-- CULTURES -->
+    <div id="culturesSection" style="display:none;margin-bottom:20px;">
+      <h2 class="section-title" id="culturesTitle">🌾 Conditions par culture</h2>
+      <div class="cultures-grid" id="culturesGrid"></div>
+    </div>
+
+
+    <!-- INDICE CONFIANCE + COMPARAISON MODÈLES -->
+    <div class="confiance-bloc" id="confianceBloc" style="display:none;">
+      <h2 class="section-title">🎯 Indice de fiabilité météo</h2>
+      <div class="confiance-score">
+        <div class="score-ring" id="scoreRing">—</div>
+        <div class="score-label">
+          <strong id="scoreLabel">Chargement...</strong>
+          <span id="scoreDesc">Recoupement ECMWF vs GFS en cours</span>
+        </div>
+      </div>
+      <div class="models-compare">
+        <div class="model-card">
+          <div class="mc-name">🇪🇺 ECMWF (Météo-France)</div>
+          <div class="mc-temp" id="ecmwf-temp">—°C</div>
+          <div class="mc-detail" id="ecmwf-rain">🌧️ — mm · 💨 — km/h</div>
+        </div>
+        <div class="model-card">
+          <div class="mc-name">🇺🇸 GFS (NOAA)</div>
+          <div class="mc-temp" id="gfs-temp">—°C</div>
+          <div class="mc-detail" id="gfs-rain">🌧️ — mm · 💨 — km/h</div>
+        </div>
+      </div>
+      <table class="diff-table" id="diffTable"></table>
+      <div id="accordBadge"></div>
+    </div>
+
+    <!-- CARTE WINDY -->
+    <div class="windy-bloc" id="windyBloc" style="display:none;">
+      <div class="windy-head">
+        <h2>🌬️ Carte météo interactive — Windy</h2>
+        <div class="windy-tabs">
+          <button class="wtab active" onclick="setWindyLayer('wind',this)">💨 Vent</button>
+          <button class="wtab" onclick="setWindyLayer('rain',this)">🌧️ Pluie</button>
+          <button class="wtab" onclick="setWindyLayer('temp',this)">🌡️ Temp.</button>
+          <button class="wtab" onclick="setWindyLayer('clouds',this)">☁️ Nuages</button>
+          <button class="wtab" onclick="setWindyLayer('thunder',this)">⛈️ Orages</button>
+        </div>
+      </div>
+      <iframe id="windyFrame" class="windy-frame" src="" allowfullscreen></iframe>
+      <div class="windy-legend">
+        🌬️ Carte Windy en temps réel · Données ECMWF · Cliquez sur la carte pour explorer · Zoom disponible
+      </div>
+    </div>
+
+  </div>
+</main>
+
+<!-- SIDEBAR -->
+<aside>
+  <div class="sidebar-block">
+    <h3>⭐ Accès Pro</h3>
+    <p style="font-size:13px;color:var(--gris);margin-bottom:10px;">Conseils IA illimités, alertes SMS, plantation, traitements, NDVI inclus.</p>
+    <div style="text-align:center;margin:10px 0;">
+      <span style="font-family:'Lora',serif;font-size:32px;font-weight:700;color:var(--vert);">29€</span>
+      <span style="font-size:12px;color:var(--gris);">/mois</span>
+    </div>
+    <button class="btn btn-or" onclick="document.getElementById('paywall').classList.add('open')">S'abonner Pro →</button>
+    <p style="text-align:center;font-size:11px;color:var(--gris);margin-top:6px;">7 jours gratuits · Sans engagement</p>
+  </div>
+
+  <div class="sidebar-block" id="sideAlertes">
+    <h3>🔔 Alertes</h3>
+    <ul class="sb-list" id="alertesList">
+      <li style="color:var(--gris);font-size:13px;">Chargez une commune pour voir les alertes</li>
+    </ul>
+    <button class="btn btn-vert" style="margin-top:10px;font-size:12px;">M'abonner aux alertes →</button>
+  </div>
+
+  <div class="sidebar-block">
+    <h3>📚 Guides cultures</h3>
+    <ul class="sb-list">
+      <li><a href="/guides/mais">🌽 Calendrier cultural maïs</a></li>
+      <li><a href="/guides/tournesol">🌻 Tournesol : stress et irrigation</a></li>
+      <li><a href="/guides/ble">🌾 Blé : stades et risques</a></li>
+      <li><a href="/guides/irrigation">💧 Irrigation : calcul ET0</a></li>
+      <li><a href="/guides/ndvi">🛸 Comprendre le NDVI</a></li>
+      <li><a href="/guides/grele">⛈️ Risque grêle : se protéger</a></li>
+    </ul>
+  </div>
+
+  <div class="sidebar-block">
+    <h3>🛸 Service NDVI drone</h3>
+    <p style="font-size:12px;color:var(--gris);margin-bottom:10px;">Cartographie de vos parcelles. Rapport agronomique IA inclus.</p>
+    <div style="font-size:14px;margin-bottom:8px;"><strong style="color:var(--vert);">Dès 8€/ha</strong> · Rapport IA inclus</div>
+    <button class="btn btn-vert" style="font-size:12px;">Demander un devis →</button>
+  </div>
+
+  <div class="sidebar-block">
+    <h3>🗺️ Autres zones</h3>
+    <ul class="sb-list">
+      <li><a href="#" onclick="selectPopular('Toulouse',43.6047,1.4442,'31');return false">🌽 Toulouse — maïs, tournesol</a></li>
+      <li><a href="#" onclick="selectPopular('Auch',43.6465,0.5857,'32');return false">🌻 Auch — Gers</a></li>
+      <li><a href="#" onclick="selectPopular('Chartres',48.4469,1.4897,'28');return false">🌾 Chartres — blé, colza</a></li>
+      <li><a href="#" onclick="selectPopular('Dijon',47.322,5.0415,'21');return false">🍇 Dijon — vigne</a></li>
+      <li><a href="#" onclick="selectPopular('Rennes',48.1173,-1.6778,'35');return false">🥛 Rennes — élevage</a></li>
+    </ul>
+  </div>
+</aside>
+</div>
+
+<!-- NEWSLETTER -->
+<div class="newsletter">
+  <div class="nl-inner">
+    <h3>📩 Alertes météo agricoles gratuites</h3>
+    <p style="font-size:13px;opacity:.8;flex:1;">Gel, sécheresse, orages — recevez les alertes pour votre commune par email.</p>
+    <div class="nl-form">
+      <input type="email" placeholder="votre@email.fr"/>
+      <button>M'alerter</button>
+    </div>
+  </div>
+</div>
+
+<!-- FOOTER -->
+<footer>
+  <div class="footer-inner">
+    <div class="footer-grid">
+      <div class="footer-col">
+        <h4>🌾 AgroMétéo</h4>
+        <p style="font-size:12px;color:#555;line-height:1.5;">Météo agricole indépendante. Données Open-Meteo, ECMWF, Météo-France. Résolution 1km.</p>
+      </div>
+      <div class="footer-col">
+        <h4>Météo locale</h4>
+        <a href="#">Toulouse</a><a href="#">Auch</a><a href="#">Agen</a>
+        <a href="#">Montauban</a><a href="#">Tarbes</a><a href="#">Chartres</a>
+      </div>
+      <div class="footer-col">
+        <h4>Cultures</h4>
+        <a href="#">Météo maïs</a><a href="#">Météo tournesol</a>
+        <a href="#">Météo blé</a><a href="#">Météo vigne</a><a href="#">Irrigation ET0</a>
+      </div>
+      <div class="footer-col">
+        <h4>Services</h4>
+        <a href="#">Analyse NDVI drone</a><a href="#">Conseil IA agronome</a>
+        <a href="#">Alertes SMS</a><a href="#">Abonnement Pro</a><a href="#">Contact</a>
+      </div>
+    </div>
+    <div class="footer-bottom">
+      <p>© 2025 AgroMétéo · Données : <a href="https://open-meteo.com" style="color:#555;">Open-Meteo</a> · ECMWF · Météo-France</p>
+      <div style="display:flex;gap:12px;">
+        <a href="#" style="color:#555;">Mentions légales</a>
+        <a href="#" style="color:#555;">CGU</a>
+        <a href="#" style="color:#555;">Contact</a>
+      </div>
+    </div>
+  </div>
+</footer>
+
+<!-- PAYWALL -->
+<div id="paywall" style="position:fixed;inset:0;background:rgba(0,0,0,.75);z-index:500;display:none;align-items:center;justify-content:center;padding:16px;">
+  <div style="background:#fff;border-radius:8px;padding:28px;max-width:500px;width:100%;box-shadow:0 20px 60px rgba(0,0,0,.3);">
+    <h2 style="font-family:'Lora',serif;font-size:22px;color:var(--vert);margin-bottom:8px;">🔒 Fonctionnalité Pro</h2>
+    <p style="color:var(--gris);font-size:14px;margin-bottom:20px;">Vous avez utilisé vos 2 questions gratuites. Abonnez-vous pour accéder aux conseils plantation, traitement et rapports illimités.</p>
+    <div style="display:grid;grid-template-columns:repeat(3,1fr);gap:10px;margin-bottom:18px;" id="plansGrid">
+      <div class="plan-card" onclick="selectPlan(this,'9€/mois')" style="border:2px solid var(--bord);border-radius:6px;padding:12px;cursor:pointer;text-align:center;">
+        <div style="font-weight:700;color:var(--ciel);margin-bottom:4px;">Starter</div>
+        <div style="font-size:22px;font-weight:700;font-family:'Lora',serif;">9€</div>
+        <div style="font-size:11px;color:var(--gris);">/mois</div>
+        <div style="font-size:11px;color:var(--gris);margin-top:8px;">10 conseils/mois</div>
+      </div>
+      <div class="plan-card selected" onclick="selectPlan(this,'29€/mois')" style="border:2px solid var(--vert);border-radius:6px;padding:12px;cursor:pointer;text-align:center;background:var(--vert-pale);position:relative;">
+        <div style="position:absolute;top:-10px;left:50%;transform:translateX(-50%);background:var(--or);color:#fff;font-size:9px;font-weight:700;padding:2px 8px;border-radius:10px;">POPULAIRE</div>
+        <div style="font-weight:700;color:var(--vert);margin-bottom:4px;">Pro</div>
+        <div style="font-size:22px;font-weight:700;font-family:'Lora',serif;">29€</div>
+        <div style="font-size:11px;color:var(--gris);">/mois</div>
+        <div style="font-size:11px;color:var(--gris);margin-top:8px;">IA illimitée + NDVI</div>
+      </div>
+      <div class="plan-card" onclick="selectPlan(this,'79€/mois')" style="border:2px solid var(--bord);border-radius:6px;padding:12px;cursor:pointer;text-align:center;">
+        <div style="font-weight:700;color:var(--or);margin-bottom:4px;">Expert</div>
+        <div style="font-size:22px;font-weight:700;font-family:'Lora',serif;">79€</div>
+        <div style="font-size:11px;color:var(--gris);">/mois</div>
+        <div style="font-size:11px;color:var(--gris);margin-top:8px;">Drone inclus</div>
+      </div>
+    </div>
+    <button id="paywallBtn" style="width:100%;padding:13px;background:var(--vert);color:#fff;border:none;border-radius:6px;font-size:15px;font-weight:700;cursor:pointer;font-family:inherit;margin-bottom:10px;">💳 S'abonner — 29€/mois</button>
+    <button onclick="document.getElementById('paywall').style.display='none'" style="width:100%;padding:9px;background:none;border:1px solid var(--bord);border-radius:6px;cursor:pointer;color:var(--gris);font-size:13px;font-family:inherit;">Continuer en gratuit</button>
+  </div>
+</div>
+
+<script>
+const WMO_ICONS={0:"☀️",1:"🌤️",2:"⛅",3:"☁️",45:"🌫️",51:"🌦️",53:"🌦️",55:"🌧️",61:"🌧️",63:"🌧️",65:"🌧️",71:"🌨️",75:"❄️",80:"🌦️",81:"🌧️",82:"⛈️",95:"⛈️",99:"⛈️"};
+const WMO_LABELS={0:"Ciel dégagé",1:"Peu nuageux",2:"Partiellement nuageux",3:"Couvert",45:"Brouillard",51:"Bruine légère",61:"Pluie légère",63:"Pluie modérée",65:"Pluie forte",71:"Neige légère",80:"Averses légères",81:"Averses modérées",82:"Averses fortes",95:"Orage",99:"Orage violent"};
+const DAYS=["Dim","Lun","Mar","Mer","Jeu","Ven","Sam"];
+let acTimeout=null, acSelected=-1, acResults=[];
+let currentGeo=null;
+
+// ── AUTOCOMPLÉTION ─────────────────────────────────────────────
+// Détecte si la saisie est un code postal (5 chiffres) ou un nom
+function isCodePostal(val){ return /^\d{4,5}$/.test(val.trim()); }
+
+async function onCommuneInput(val) {
+  clearTimeout(acTimeout);
+  const list=document.getElementById('acList');
+  if(val.length<2){list.classList.remove('open');return;}
+  list.innerHTML='<div class="ac-loading">🔍 Recherche...</div>';
+  list.classList.add('open');
+  acTimeout=setTimeout(async()=>{
+    try{
+      let results=[];
+      if(isCodePostal(val)){
+        // ── API Geo.api.gouv.fr : accepte les codes postaux ──
+        const url=`https://geo.api.gouv.fr/communes?codePostal=${val.trim()}&fields=nom,codesPostaux,centre,codeDepartement,departement&format=json&geometry=centre`;
+        const data=await fetch(url).then(r=>r.json());
+        results=(data||[]).map(c=>({
+          name: c.nom,
+          latitude: c.centre?.coordinates?.[1],
+          longitude: c.centre?.coordinates?.[0],
+          admin2: c.departement?.nom||'',
+          codePostal: c.codesPostaux?.[0]||val,
+          source:'gouv'
+        })).filter(r=>r.latitude&&r.longitude);
+      } else {
+        // ── Open-Meteo geocoding : noms de communes ──
+        const url=`https://geocoding-api.open-meteo.com/v1/search?name=${encodeURIComponent(val)}&count=8&language=fr&countryCode=FR`;
+        const data=await fetch(url).then(r=>r.json());
+        results=(data.results||[]).map(r=>({...r,source:'openmeteo'}));
+      }
+      acResults=results;
+      if(!acResults.length){list.innerHTML='<div class="ac-empty">Aucune commune trouvée pour "'+val+'"</div>';return;}
+      acSelected=-1;
+      list.innerHTML=acResults.map((r,i)=>`
+        <div class="ac-item" onmousedown="selectAC(${i})" data-idx="${i}">
+          <div class="ac-item-icon">📍</div>
+          <div>
+            <div class="ac-item-name">${r.name}</div>
+            <div class="ac-item-dept">${r.admin2||r.admin1||''}${r.codePostal?' · '+r.codePostal:''}</div>
+          </div>
+        </div>`).join('');
+    }catch(e){
+      // Fallback : essayer l'autre API en cas d'erreur
+      try{
+        const url2=`https://geo.api.gouv.fr/communes?nom=${encodeURIComponent(val)}&fields=nom,codesPostaux,centre,departement&format=json&geometry=centre&limit=8`;
+        const data2=await fetch(url2).then(r=>r.json());
+        acResults=(data2||[]).map(c=>({name:c.nom,latitude:c.centre?.coordinates?.[1],longitude:c.centre?.coordinates?.[0],admin2:c.departement?.nom||'',codePostal:c.codesPostaux?.[0]||''})).filter(r=>r.latitude);
+        if(!acResults.length){list.innerHTML='<div class="ac-empty">Aucune commune trouvée</div>';return;}
+        acSelected=-1;
+        list.innerHTML=acResults.map((r,i)=>`<div class="ac-item" onmousedown="selectAC(${i})"><div class="ac-item-icon">📍</div><div><div class="ac-item-name">${r.name}</div><div class="ac-item-dept">${r.admin2} · ${r.codePostal}</div></div></div>`).join('');
+      }catch{list.innerHTML='<div class="ac-empty">Erreur de connexion. Vérifiez votre réseau.</div>';}
+    }
+  },300);
+}
+
+function onCommuneKey(e) {
+  const list=document.getElementById('acList');
+  const items=list.querySelectorAll('.ac-item');
+  if(e.key==='ArrowDown'){e.preventDefault();acSelected=Math.min(acSelected+1,items.length-1);items.forEach((el,i)=>el.classList.toggle('selected',i===acSelected));}
+  else if(e.key==='ArrowUp'){e.preventDefault();acSelected=Math.max(acSelected-1,0);items.forEach((el,i)=>el.classList.toggle('selected',i===acSelected));}
+  else if(e.key==='Enter'){e.preventDefault();if(acSelected>=0&&acResults[acSelected])selectAC(acSelected);else lancerRecherche();}
+  else if(e.key==='Escape'){list.classList.remove('open');}
+}
+
+function selectAC(idx) {
+  const r=acResults[idx];
+  if(!r)return;
+  currentGeo={nom:r.name,lat:r.latitude,lon:r.longitude,dept:r.admin2||r.admin1||''};
+  document.getElementById('communeInput').value=r.name;
+  document.getElementById('acList').classList.remove('open');
+  chargerMeteo(currentGeo);
+}
+
+function selectPopular(nom,lat,lon,dept) {
+  currentGeo={nom,lat,lon,dept:`Dept. ${dept}`};
+  document.getElementById('communeInput').value=nom;
+  document.getElementById('acList').classList.remove('open');
+  chargerMeteo(currentGeo);
+  window.scrollTo({top:document.querySelector('.hero').offsetTop,behavior:'smooth'});
+}
+
+async function lancerRecherche() {
+  const val=document.getElementById('communeInput').value.trim();
+  if(!val)return;
+  if(currentGeo&&currentGeo.nom===val){chargerMeteo(currentGeo);return;}
+  const btn=document.getElementById('searchBtn');
+  btn.textContent='⏳...'; btn.disabled=true;
+  try{
+    let geo=null;
+    if(isCodePostal(val)){
+      // Code postal → API Gouv
+      const data=await fetch(`https://geo.api.gouv.fr/communes?codePostal=${val}&fields=nom,codesPostaux,centre,departement&format=json&geometry=centre`).then(r=>r.json());
+      if(data?.length){
+        const c=data[0];
+        geo={nom:c.nom,lat:c.centre.coordinates[1],lon:c.centre.coordinates[0],dept:c.departement?.nom||''};
+      }
+    } else {
+      // Nom → essayer d'abord API Gouv puis Open-Meteo
+      try{
+        const data=await fetch(`https://geo.api.gouv.fr/communes?nom=${encodeURIComponent(val)}&fields=nom,codesPostaux,centre,departement&format=json&geometry=centre&limit=1`).then(r=>r.json());
+        if(data?.length){const c=data[0];geo={nom:c.nom,lat:c.centre.coordinates[1],lon:c.centre.coordinates[0],dept:c.departement?.nom||''};}
+      }catch{}
+      if(!geo){
+        const data=await fetch(`https://geocoding-api.open-meteo.com/v1/search?name=${encodeURIComponent(val)}&count=1&language=fr&countryCode=FR`).then(r=>r.json());
+        if(data.results?.length){const r=data.results[0];geo={nom:r.name,lat:r.latitude,lon:r.longitude,dept:r.admin2||r.admin1||''};}
+      }
+    }
+    if(!geo){alert('Commune ou code postal introuvable. Essayez le nom de la commune.');btn.textContent='Voir la météo →';btn.disabled=false;return;}
+    currentGeo=geo;
+    document.getElementById('communeInput').value=geo.nom;
+    chargerMeteo(geo);
+  }catch(e){alert('Erreur réseau. Vérifiez votre connexion.');}
+  btn.textContent='Voir la météo →'; btn.disabled=false;
+}
+
+function useMyLocation() {
+  if(!navigator.geolocation){alert('Géolocalisation non disponible.');return;}
+  document.getElementById('communeInput').value='📡 Localisation en cours...';
+  navigator.geolocation.getCurrentPosition(async pos=>{
+    const{latitude:lat,longitude:lon}=pos.coords;
+    try{
+      const data=await fetch(`https://geocoding-api.open-meteo.com/v1/search?name=&latitude=${lat}&longitude=${lon}&count=1&language=fr`).then(r=>r.json());
+      const nom=data.results?.[0]?.name||'Ma position';
+      currentGeo={nom,lat,lon,dept:data.results?.[0]?.admin2||''};
+      document.getElementById('communeInput').value=nom;
+      chargerMeteo(currentGeo);
+    }catch{
+      currentGeo={nom:'Ma position',lat,lon,dept:''};
+      chargerMeteo(currentGeo);
+    }
+  },()=>alert('Impossible d\'accéder à votre position.'));
+}
+
+// ── CHARGEMENT MÉTÉO ──────────────────────────────────────────
+async function chargerMeteo(geo) {
+  document.getElementById('welcomeState').style.display='none';
+  document.getElementById('results').classList.add('visible');
+  document.getElementById('stressBloc').style.display='none';
+  document.getElementById('culturesSection').style.display='none';
+  document.getElementById('breadcrumb').style.display='block';
+  document.getElementById('breadText').textContent=geo.nom;
+  document.getElementById('meteoTitle').textContent=`Météo agricole — ${geo.nom}`;
+  document.getElementById('mh-badge').textContent=`📍 ${geo.nom}${geo.dept?' · '+geo.dept:''}`;
+  document.getElementById('meteoNow').innerHTML='<div class="loader-wrap"><div class="loader"><span></span><span></span><span></span></div><p style="margin-top:8px;">Chargement Open-Meteo...</p></div>';
+  document.getElementById('confianceBloc').style.display='none';
+  document.getElementById('windyBloc').style.display='none';
+  document.title=`Météo agricole ${geo.nom} | AgroMétéo`;
+  window.scrollTo({top:document.getElementById('results').offsetTop-20,behavior:'smooth'});
+  try{
+    const url=`https://api.open-meteo.com/v1/forecast?latitude=${geo.lat}&longitude=${geo.lon}`
+      +`&current=temperature_2m,relative_humidity_2m,apparent_temperature,precipitation,weather_code,wind_speed_10m,wind_gusts_10m`
+      +`&daily=weather_code,temperature_2m_max,temperature_2m_min,precipitation_sum,et0_fao_evapotranspiration`
+      +`&forecast_days=7&timezone=Europe%2FParis`;
+    const data=await fetch(url).then(r=>r.json());
+    renderMeteo(data,geo);
+    chargerDoubleModele(geo.lat,geo.lon);
+    afficherWindy(geo.lat,geo.lon);
+  }catch{
+    document.getElementById('meteoNow').innerHTML='<p style="color:red;padding:12px;">Erreur de chargement météo. Vérifiez votre connexion.</p>';
+  }
+}
+
+function renderMeteo(data,geo) {
+  const c=data.current, d=data.daily;
+  const culture=document.getElementById('cultureSelect').value;
+
+  // Météo actuelle + prévisions
+  document.getElementById('meteoNow').innerHTML=`
+    <div class="meteo-now">
+      <div class="mn-icon">${WMO_ICONS[c.weather_code]||'🌡️'}</div>
+      <div>
+        <div class="mn-temp">${parseFloat(c.temperature_2m).toFixed(1)}°C</div>
+        <div class="mn-desc">Ressenti ${parseFloat(c.apparent_temperature).toFixed(0)}°C · ${WMO_LABELS[c.weather_code]||''}</div>
+        <div class="mn-desc" style="color:var(--vert);font-weight:600;margin-top:3px;">Conditions pour ${culture}</div>
+      </div>
+      <div class="mn-grid">
+        <div class="mn-item"><label>💧 Humidité</label><strong>${c.relative_humidity_2m}%</strong></div>
+        <div class="mn-item"><label>💨 Vent</label><strong>${parseFloat(c.wind_speed_10m).toFixed(0)} km/h</strong></div>
+        <div class="mn-item"><label>🌧️ Pluie auj.</label><strong>${c.precipitation} mm</strong></div>
+        <div class="mn-item"><label>💨 Rafales</label><strong>${parseFloat(c.wind_gusts_10m).toFixed(0)} km/h</strong></div>
+      </div>
+    </div>
+    <div class="prev7">${d.time.map((t,i)=>{
+      const day=new Date(t);
+      return `<div class="pd">
+        <div class="pj">${DAYS[day.getDay()]}</div>
+        <div class="pi">${WMO_ICONS[d.weather_code[i]]||'🌡️'}</div>
+        <div class="pt">${parseFloat(d.temperature_2m_max[i]).toFixed(0)}°</div>
+        <div class="pm">${parseFloat(d.temperature_2m_min[i]).toFixed(0)}°</div>
+        ${d.precipitation_sum[i]>0?`<div class="pp">${parseFloat(d.precipitation_sum[i]).toFixed(1)}mm</div>`:''}
+      </div>`;
+    }).join('')}</div>`;
+
+  // Calcul stress
+  const et0=d.et0_fao_evapotranspiration?.[0]||0;
+  const rain7=d.precipitation_sum.reduce((a,b)=>a+b,0);
+  const minT=Math.min(...d.temperature_2m_min);
+  const maxT=Math.max(...d.temperature_2m_max);
+  const drought=Math.min(100,Math.max(0,Math.round((et0*7-rain7)/(et0*7+.1)*100)));
+  const frost=minT<2?Math.min(100,Math.round((2-minT)*25)):0;
+  const heat=maxT>30?Math.min(100,Math.round((maxT-30)*10)):0;
+
+  document.getElementById('stressBloc').style.display='block';
+  ['Drought','Frost','Heat'].forEach((k,i)=>{
+    const val=[drought,frost,heat][i];
+    document.getElementById('v'+k).textContent=val+'%';
+    setTimeout(()=>document.getElementById('b'+k).style.width=val+'%',150);
+  });
+  if(et0>0){document.getElementById('et0val').textContent=et0.toFixed(1);document.getElementById('et0line').style.display='block';}
+  const sumEl=document.getElementById('stressSummary');
+  if(drought<25&&frost===0&&heat===0){sumEl.className='stress-summary ok-bg';sumEl.innerHTML='✅ Conditions globalement favorables pour '+culture;}
+  else if(frost>50||drought>70||heat>60){sumEl.className='stress-summary danger-bg';sumEl.innerHTML='⚠️ Stress important détecté — action recommandée';}
+  else{sumEl.className='stress-summary warn-bg';sumEl.innerHTML='⚡ Vigilance conseillée — consultez le conseil IA';}
+
+  // Cultures
+  const CULTURES_DEF=[
+    {icon:'🌽',nom:'Maïs',check:(d,h,f)=>h>50?{cl:'danger',txt:`Stress thermique (${maxT.toFixed(0)}°C). Irriguer si floraison.`}:d>50?{cl:'warn',txt:`Déficit hydrique. ET0 : ${et0.toFixed(1)} mm/j.`}:{cl:'ok',txt:`Favorable. Surveiller l'ET0 en été.`}},
+    {icon:'🌻',nom:'Tournesol',check:(d,h,f)=>d>60?{cl:'warn',txt:`Déficit hydrique élevé. Surveiller bouton floral.`}:{cl:'ok',txt:`Bonne résistance. Conditions correctes.`}},
+    {icon:'🌾',nom:'Blé',check:(d,h,f)=>f>30?{cl:'danger',txt:`Risque gel. Surveiller stade épi 1 cm.`}:{cl:'ok',txt:`Conditions correctes. Surveiller maladies foliaires.`}},
+    {icon:'🍇',nom:'Vigne',check:(d,h,f)=>f>20?{cl:'danger',txt:`Risque gel tardif. Protéger les bourgeons.`}:c.relative_humidity_2m>85?{cl:'warn',txt:`Humidité élevée (${c.relative_humidity_2m}%). Risque mildiou.`}:{cl:'ok',txt:`Conditions favorables au développement.`}},
+  ];
+  document.getElementById('culturesSection').style.display='block';
+  document.getElementById('culturesTitle').textContent=`🌾 Conditions par culture — ${geo.nom}`;
+  document.getElementById('culturesGrid').innerHTML=CULTURES_DEF.map(cu=>{
+    const s=cu.check(drought,heat,frost);
+    return `<div class="cc"><div class="cc-icon">${cu.icon}</div><div><h3>${cu.nom}</h3><p>${s.txt}</p><span class="cc-badge badge-${s.cl}">${s.cl==='ok'?'✅ Favorable':s.cl==='warn'?'⚡ Vigilance':'⚠️ Alerte'}</span></div></div>`;
+  }).join('');
+
+  // Alertes sidebar
+  const alertes=[];
+  if(frost>50) alertes.push({dot:'dot-red',txt:`Risque gel fort (${minT.toFixed(1)}°C min prévus)`});
+  else if(frost>15) alertes.push({dot:'dot-orange',txt:`Risque gel modéré à surveiller`});
+  if(drought>65) alertes.push({dot:'dot-red',txt:`Stress hydrique sévère prévu`});
+  else if(drought>30) alertes.push({dot:'dot-orange',txt:`Déficit hydrique modéré`});
+  if(heat>50) alertes.push({dot:'dot-red',txt:`Vague de chaleur — maïs sensible`});
+  if(!alertes.length) alertes.push({dot:'dot-green',txt:`Aucune alerte en cours pour ${geo.nom}`});
+  document.getElementById('alertesList').innerHTML=alertes.map(a=>`<li><span class="alerte-dot ${a.dot}"></span>${a.txt}</li>`).join('');
+}
+
+
+
+// ── DOUBLE MODÈLE + INDICE CONFIANCE ──────────────────────────
+async function chargerDoubleModele(lat, lon) {
+  try {
+    const baseUrl = `https://api.open-meteo.com/v1/forecast?latitude=${lat}&longitude=${lon}&forecast_days=3&timezone=Europe%2FParis`;
+    // ECMWF IFS : utilise hourly car current non dispo sur ce modèle
+    const ecmwfUrl = baseUrl + `&hourly=temperature_2m,precipitation,wind_speed_10m&daily=temperature_2m_max,precipitation_sum&models=ecmwf_ifs025&forecast_days=1`;
+    // GFS : supporte current directement
+    const gfsUrl   = baseUrl + `&current=temperature_2m,precipitation,wind_speed_10m&daily=temperature_2m_max,precipitation_sum&models=gfs_seamless`;
+
+    const [ecmwf, gfs] = await Promise.all([
+      fetch(ecmwfUrl).then(r=>r.json()).catch(()=>null),
+      fetch(gfsUrl).then(r=>r.json()).catch(()=>null),
+    ]);
+
+    if (!ecmwf || !gfs) return;
+
+    // ECMWF : prendre l'heure courante dans le tableau horaire
+    const now = new Date();
+    const currentHour = now.getHours();
+    const eT = parseFloat(ecmwf.hourly?.temperature_2m?.[currentHour] ?? ecmwf.hourly?.temperature_2m?.[12] ?? null);
+    const eW = parseFloat(ecmwf.hourly?.wind_speed_10m?.[currentHour] ?? ecmwf.hourly?.wind_speed_10m?.[12] ?? 0);
+    const eR = parseFloat(ecmwf.daily?.precipitation_sum?.[0] ?? 0);
+    // Vérifier que ECMWF a bien renvoyé des données valides
+    if (eT === null || isNaN(eT) || eT === 0 && eW === 0) return;
+
+    const gT = parseFloat(gfs.current?.temperature_2m ?? 0);
+    const gR = parseFloat(gfs.daily?.precipitation_sum?.[0] ?? 0);
+    const gW = parseFloat(gfs.current?.wind_speed_10m ?? 0);
+
+    const diffT = Math.abs(eT - gT);
+    const diffR = Math.abs(eR - gR);
+    const diffW = Math.abs(eW - gW);
+
+    // Score 0-100 : plus les modèles sont proches, plus c'est fiable
+    const scoreT = Math.max(0, 100 - diffT * 10);
+    const scoreR = Math.max(0, 100 - diffR * 8);
+    const scoreW = Math.max(0, 100 - diffW * 3);
+    const score  = Math.round((scoreT * 0.5 + scoreR * 0.3 + scoreW * 0.2));
+
+    const ring  = document.getElementById('scoreRing');
+    const label = document.getElementById('scoreLabel');
+    const desc  = document.getElementById('scoreDesc');
+    ring.textContent = score + '%';
+    if (score >= 75) {
+      ring.className = 'score-ring score-high';
+      label.textContent = '✅ Prévisions fiables';
+      desc.textContent  = 'Les modèles ECMWF et GFS sont en accord. Bonne fiabilité à 3 jours.';
+    } else if (score >= 50) {
+      ring.className = 'score-ring score-med';
+      label.textContent = '⚡ Fiabilité modérée';
+      desc.textContent  = 'Légères divergences entre modèles. Prudence sur les précipitations.';
+    } else {
+      ring.className = 'score-ring score-low';
+      label.textContent = '⚠️ Incertitude élevée';
+      desc.textContent  = 'Les modèles divergent significativement. Prévisions à confirmer.';
+    }
+
+    document.getElementById('ecmwf-temp').textContent = eT.toFixed(1) + '°C';
+    document.getElementById('ecmwf-rain').textContent = `🌧️ ${eR.toFixed(1)} mm · 💨 ${eW.toFixed(0)} km/h`;
+    document.getElementById('gfs-temp').textContent   = gT.toFixed(1) + '°C';
+    document.getElementById('gfs-rain').textContent   = `🌧️ ${gR.toFixed(1)} mm · 💨 ${gW.toFixed(0)} km/h`;
+
+    const colorT = diffT < 1 ? 'diff-ok' : diffT < 3 ? 'diff-warn' : 'diff-bad';
+    const colorR = diffR < 2 ? 'diff-ok' : diffR < 6 ? 'diff-warn' : 'diff-bad';
+    const colorW = diffW < 5 ? 'diff-ok' : diffW < 15 ? 'diff-warn' : 'diff-bad';
+    document.getElementById('diffTable').innerHTML = `
+      <tr><td>Écart température</td><td class="${colorT}">${diffT.toFixed(1)}°C ${diffT<1?'✅':diffT<3?'⚡':'⚠️'}</td></tr>
+      <tr><td>Écart précipitations</td><td class="${colorR}">${diffR.toFixed(1)} mm ${diffR<2?'✅':diffR<6?'⚡':'⚠️'}</td></tr>
+      <tr><td>Écart vent</td><td class="${colorW}">${diffW.toFixed(0)} km/h ${diffW<5?'✅':diffW<15?'⚡':'⚠️'}</td></tr>`;
+
+    const badgeClass = score>=75?'accord-ok':score>=50?'accord-warn':'accord-bad';
+    const badgeTxt   = score>=75?'✅ Accord ECMWF × GFS — Prévisions cohérentes':
+                       score>=50?'⚡ Accord partiel — Surveiller les précipitations':
+                                 '⚠️ Désaccord modèles — Forte incertitude';
+    document.getElementById('accordBadge').innerHTML = `<span class="accord-badge ${badgeClass}">${badgeTxt}</span>`;
+    document.getElementById('confianceBloc').style.display = 'block';
+
+  } catch(e) { console.warn('Double modèle:', e); }
+}
+
+// ── CARTE WINDY ───────────────────────────────────────────────
+let windyLat = 43.6047, windyLon = 1.4442, windyLayer = 'wind';
+
+function buildWindyUrl(lat, lon, layer) {
+  return `https://embed.windy.com/embed2.html?lat=${lat}&lon=${lon}&detailLat=${lat}&detailLon=${lon}&width=650&height=380&zoom=8&level=surface&overlay=${layer}&product=ecmwf&menu=&message=true&marker=true&calendar=now&pressure=&type=map&location=coordinates&detail=&metricWind=km%2Fh&metricTemp=%C2%B0C&radarRange=-1`;
+}
+
+function setWindyLayer(layer, btn) {
+  windyLayer = layer;
+  document.querySelectorAll('.wtab').forEach(b => b.classList.remove('active'));
+  btn.classList.add('active');
+  document.getElementById('windyFrame').src = buildWindyUrl(windyLat, windyLon, layer);
+}
+
+function afficherWindy(lat, lon) {
+  windyLat = lat; windyLon = lon;
+  document.getElementById('windyFrame').src = buildWindyUrl(lat, lon, windyLayer);
+  document.getElementById('windyBloc').style.display = 'block';
+}
+
+// ── PAYWALL ──────────────────────────────────────────────────
+function selectPlan(el,prix){
+  document.querySelectorAll('.plan-card').forEach(p=>{p.style.border='2px solid var(--bord)';p.style.background='';});
+  el.style.border='2px solid var(--vert)';el.style.background='var(--vert-pale)';
+  document.getElementById('paywallBtn').textContent=`💳 S'abonner — ${prix}`;
+}
+document.getElementById('paywall').addEventListener('click',function(e){if(e.target===this)this.style.display='none';});
+document.addEventListener('click',function(e){
+  if(!e.target.closest('.search-commune-wrap')) document.getElementById('acList').classList.remove('open');
+});
+</script>
+</body>
+</html>
